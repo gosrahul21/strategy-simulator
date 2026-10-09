@@ -14,6 +14,7 @@ interface Strategy {
   };
   rules: any[];
 }
+import { API_BASE_URL } from './config';
 
 export function Strategies() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export function Strategies() {
   useEffect(() => {
     const fetchStrategies = async () => {
       try {
-        const res = await fetch('http://localhost:3000/api/strategies');
+        const res = await fetch(`${API_BASE_URL}/strategies`);
         setStrategies(await res.json());
       } catch (e) {
         console.error(e);

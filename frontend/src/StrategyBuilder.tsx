@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, ArrowRight, ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './index.css';
+import { API_BASE_URL } from './config';
 
 interface Rule {
   id: string;
@@ -97,7 +98,7 @@ export function StrategyBuilder() {
         }))
       };
       
-      const url = editId ? `http://localhost:3000/api/strategies/${editId}` : 'http://localhost:3000/api/strategies';
+      const url = editId ? `${API_BASE_URL}/strategies/${editId}` : `${API_BASE_URL}/strategies`;
       const method = editId ? 'PUT' : 'POST';
       
       const res = await fetch(url, {
@@ -114,7 +115,7 @@ export function StrategyBuilder() {
       const strategy = await res.json();
       
       if (!editId) {
-        await fetch(`http://localhost:3000/api/strategies/${strategy.id}/start`, { method: 'POST' });
+        await fetch(`${API_BASE_URL}/strategies/${strategy.id}/start`, { method: 'POST' });
       }
       
       alert(editId ? 'Strategy Updated Successfully!' : 'Strategy Created & Started Successfully!');
@@ -326,7 +327,7 @@ export function StrategyBuilder() {
               {editId && (
                 <button className="btn secondary" style={{ color: '#ef4444', borderColor: '#ef4444' }} onClick={async () => {
                   if (confirm('Are you sure you want to delete this strategy?')) {
-                    await fetch(`http://localhost:3000/api/strategies/${editId}`, { method: 'DELETE' });
+                    await fetch(`${API_BASE_URL}/strategies/${editId}`, { method: 'DELETE' });
                     navigate('/strategies');
                   }
                 }}>

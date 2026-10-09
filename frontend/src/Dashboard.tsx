@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Activity, DollarSign, Target, Clock, ArrowUpRight, ArrowDownRight, Layers } from 'lucide-react';
 import './Dashboard.css';
+import { API_BASE_URL } from './config';
 
 interface Portfolio {
   id: string;
@@ -54,13 +55,13 @@ export function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const stratRes = await fetch('http://localhost:3000/api/strategies');
+        const stratRes = await fetch(`${API_BASE_URL}/strategies`);
         const strategies = await stratRes.json();
         
         let allPositions: Position[] = [];
         let allOrders: Order[] = [];
         // Fetch global portfolio independently
-        const portRes = await fetch(`http://localhost:3000/api/portfolios/global`);
+        const portRes = await fetch(`${API_BASE_URL}/portfolios/global`);
         if (portRes.ok) {
           const globalPort = await portRes.json();
           setPortfolio(globalPort);
@@ -91,7 +92,7 @@ export function Dashboard() {
 
   const handleAddFunds = async () => {
     try {
-      const res = await fetch(`http://localhost:3000/api/portfolios/global/fund`, {
+      const res = await fetch(`${API_BASE_URL}/portfolios/global/fund`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: 1000 })
