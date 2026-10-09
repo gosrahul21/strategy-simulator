@@ -114,7 +114,7 @@ export class RuleEvaluationService {
     if (limitPrice) {
       if (strategy.portfolio && rule.orderSizeUnit === 'percentage') {
         if (rule.action === 'BUY') {
-          requestedSizeUsdt = strategy.portfolio.availableCash * (rule.orderSize / 100);
+          requestedSizeUsdt = strategy.capital * (rule.orderSize / 100);
         } else {
           requestedSizeUsdt = position ? (position.quantity * limitPrice) * (rule.orderSize / 100) : 0;
         }
@@ -160,11 +160,34 @@ export class RuleEvaluationService {
       }
     }
 
-    if (triggered && pendingOrder && limitPrice) {
-      console.log(`[Rule Evaluator] Strategy ${strategy.id} triggered rule ${rule.id}. Executing order ${pendingOrder.id}`);
-      await executionService.executeOrder(
-        pendingOrder.id, limitPrice, pendingOrder.requestedSize, rule.action as 'BUY' | 'SELL', latestCandle.symbol, strategy.id
-      ).catch(console.error);
+    if (triggered) {
+      if (pendingOrder && limitPrice) {
+        console.log(`[Rule Evaluator] Strategy ${strategy.id} triggered rule ${rule.id}. Executing order ${pendingOrder.id}`);
+        await executionService.executeOrder(
+          pendingOrder.id, limitPrice, pendingOrder.requestedSize, rule.action as 'BUY' | 'SELL', latestCandle.symbol, strategy.id
+        ).catch(console.error);
+      } else if (!limitPrice) {
+        // Market Order Execution
+        const execPrice = latestCandle.close;
+        let requestedSizeUsdt = rule.orderSize;
+        if (rule.orderSizeUnit === 'percentage') {
+          if (rule.action === 'BUY') {
+            requestedSizeUsdt = strategy.capital * (rule.orderSize / 100);
+          } else {
+            requestedSizeUsdt = position ? (position.quantity * execPrice) * (rule.orderSize / 100) : 0;
+          }
+        }
+        
+        if (requestedSizeUsdt > 0) {
+          const mktOrder = await executionService.upsertPendingOrder(
+            strategy.id, rule.id, rule.action as 'BUY' | 'SELL', latestCandle.symbol, requestedSizeUsdt, execPrice
+          );
+          console.log(`[Rule Evaluator] Strategy ${strategy.id} triggered rule ${rule.id}. Executing MARKET order ${mktOrder.id}`);
+          await executionService.executeOrder(
+            mktOrder.id, execPrice, requestedSizeUsdt, rule.action as 'BUY' | 'SELL', latestCandle.symbol, strategy.id
+          ).catch(console.error);
+        }
+      }
     }
   }
 }

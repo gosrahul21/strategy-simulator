@@ -2,10 +2,11 @@ import { prisma } from '../db/prisma';
 
 export class PortfolioService {
   async getGlobalPortfolio() {
-    let portfolio = await prisma.portfolio.findFirst();
+    let portfolio = await prisma.portfolio.findUnique({ where: { id: 'global' } });
     if (!portfolio) {
       portfolio = await prisma.portfolio.create({
         data: {
+          id: 'global',
           allocatedCapital: 0,
           availableCash: 0,
         }

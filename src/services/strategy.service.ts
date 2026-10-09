@@ -33,10 +33,10 @@ export class StrategyService {
   }) {
     const { name, instrument, duration, portfolioCapital, rules } = data;
 
-    let globalPortfolio = await prisma.portfolio.findFirst();
+    let globalPortfolio = await prisma.portfolio.findUnique({ where: { id: 'global' } });
     if (!globalPortfolio) {
       globalPortfolio = await prisma.portfolio.create({
-        data: { allocatedCapital: 0, availableCash: 0 }
+        data: { id: 'global', allocatedCapital: 0, availableCash: 0 }
       });
     }
 
@@ -170,6 +170,19 @@ export class StrategyService {
   }
 
   async deleteStrategy(id: string) {
+    // Get the strategy to find out how much capital was allocated
+    const strategy = await prisma.strategy.findUnique({
+      where: { id }
+    });
+
+    if (strategy) {
+      // Add the capital back to the global wallet's availableCash
+      await prisma.portfolio.update({
+        where: { id: 'global' },
+        data: { availableCash: { increment: strategy.capital } }
+      });
+    }
+
     return prisma.strategy.delete({
       where: { id }
     });
