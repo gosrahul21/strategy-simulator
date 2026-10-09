@@ -27,6 +27,7 @@ model Strategy {
   status          String   @default("Draft") // Draft, Running, Paused, Completed, Stopped
   portfolioId     String
   portfolio       Portfolio @relation(fields: [portfolioId], references: [id])
+  capital         Float    @default(0)
   rules           Rule[]
   positions       Position[]
   orders          Order[]

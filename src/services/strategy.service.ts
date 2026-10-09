@@ -33,12 +33,21 @@ export class StrategyService {
   }) {
     const { name, instrument, duration, portfolioCapital, rules } = data;
 
-    // Create the portfolio first
-    const portfolio = await prisma.portfolio.create({
-      data: {
-        allocatedCapital: portfolioCapital,
-        availableCash: portfolioCapital,
-      },
+    let globalPortfolio = await prisma.portfolio.findFirst();
+    if (!globalPortfolio) {
+      globalPortfolio = await prisma.portfolio.create({
+        data: { allocatedCapital: 0, availableCash: 0 }
+      });
+    }
+
+    if (globalPortfolio.availableCash < portfolioCapital) {
+      throw new Error(`Insufficient funds. Available cash in global wallet is $${globalPortfolio.availableCash}, but strategy requires $${portfolioCapital}. Please add funds to the global wallet first.`);
+    }
+
+    // Deduct from available cash
+    await prisma.portfolio.update({
+      where: { id: globalPortfolio.id },
+      data: { availableCash: { decrement: portfolioCapital } }
     });
 
     // Create the strategy with nested rules
@@ -47,7 +56,8 @@ export class StrategyService {
         name,
         instrument,
         duration,
-        portfolioId: portfolio.id,
+        portfolioId: globalPortfolio.id,
+        capital: portfolioCapital,
         rules: {
           create: rules.map(r => ({
             timeframe: r.timeframe,
@@ -70,15 +80,17 @@ export class StrategyService {
   async updateStrategy(id: string, data: any) {
     const { name, instrument, duration, rules, portfolioCapital } = data;
 
-    if (portfolioCapital) {
+    if (portfolioCapital !== undefined) {
       const existingStrategy = await prisma.strategy.findUnique({ where: { id }, include: { portfolio: true } });
-      if (existingStrategy?.portfolio) {
-        const diff = portfolioCapital - existingStrategy.portfolio.allocatedCapital;
+      if (existingStrategy && existingStrategy.portfolio) {
+        const diff = portfolioCapital - existingStrategy.capital;
+        if (diff > 0 && existingStrategy.portfolio.availableCash < diff) {
+          throw new Error(`Insufficient global funds to increase strategy capital. Short by $${diff - existingStrategy.portfolio.availableCash}`);
+        }
         await prisma.portfolio.update({
           where: { id: existingStrategy.portfolioId },
           data: {
-            allocatedCapital: portfolioCapital,
-            availableCash: Math.max(0, existingStrategy.portfolio.availableCash + diff)
+            availableCash: { decrement: diff }
           }
         });
       }
@@ -106,6 +118,7 @@ export class StrategyService {
         name,
         instrument,
         duration,
+        capital: portfolioCapital !== undefined ? portfolioCapital : undefined,
         rules: {
           create: rules.map((r: any) => ({
             timeframe: r.timeframe,

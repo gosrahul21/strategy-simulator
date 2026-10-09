@@ -16,9 +16,9 @@ export class StrategyController {
     try {
       const strategy = await strategyService.createStrategy(req.body);
       res.status(201).json(strategy);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(400).json({ error: error.message || 'Internal server error' });
     }
   }
 
@@ -27,9 +27,9 @@ export class StrategyController {
       const { id } = req.params;
       const strategy = await strategyService.updateStrategy(id as string, req.body);
       res.json(strategy);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(400).json({ error: error.message || 'Internal server error' });
     }
   }
 

@@ -23,9 +23,9 @@ export class PortfolioController {
       const { amount } = req.body;
       const portfolio = await portfolioService.addFunds(id as string, Number(amount));
       res.json(portfolio);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      res.status(500).json({ error: 'Internal server error' });
+      res.status(500).json({ error: error.message || 'Internal server error' });
     }
   }
 }

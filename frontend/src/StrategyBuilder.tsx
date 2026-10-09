@@ -106,7 +106,10 @@ export function StrategyBuilder() {
         body: JSON.stringify(payload)
       });
       
-      if (!res.ok) throw new Error('Failed to save strategy');
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => null);
+        throw new Error(errorData?.error || 'Failed to save strategy');
+      }
       
       const strategy = await res.json();
       
@@ -116,9 +119,9 @@ export function StrategyBuilder() {
       
       alert(editId ? 'Strategy Updated Successfully!' : 'Strategy Created & Started Successfully!');
       navigate('/strategies');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Error saving strategy');
+      alert(err.message || 'Error saving strategy');
     }
   };
 

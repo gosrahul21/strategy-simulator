@@ -59,8 +59,13 @@ export function Dashboard() {
         
         let allPositions: Position[] = [];
         let allOrders: Order[] = [];
-        let latestPort: Portfolio | null = null;
-        
+        // Fetch global portfolio independently
+        const portRes = await fetch(`http://localhost:3000/api/portfolios/global`);
+        if (portRes.ok) {
+          const globalPort = await portRes.json();
+          setPortfolio(globalPort);
+        }
+
         if (strategies.length > 0) {
           // Flatten orders and positions from all strategies
           strategies.forEach((s: any) => {
@@ -73,14 +78,6 @@ export function Dashboard() {
           
           setPositions(allPositions);
           setOrders(allOrders.slice(0, 30)); // Top 30 recent orders
-          
-          // Get the portfolio of the most recent strategy
-          const latestStrat = strategies[0];
-          if (latestStrat?.portfolioId) {
-            const portRes = await fetch(`http://localhost:3000/api/portfolios/${latestStrat.portfolioId}`);
-            latestPort = await portRes.json();
-            setPortfolio(latestPort);
-          }
         }
       } catch (e) {
         console.error('Error fetching dashboard data:', e);
@@ -93,12 +90,8 @@ export function Dashboard() {
   }, []);
 
   const handleAddFunds = async () => {
-    if (!portfolio) {
-      alert("Please create a strategy first to initialize your portfolio!");
-      return;
-    }
     try {
-      const res = await fetch(`http://localhost:3000/api/portfolios/${portfolio.id}/fund`, {
+      const res = await fetch(`http://localhost:3000/api/portfolios/global/fund`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount: 1000 })
