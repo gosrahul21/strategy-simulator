@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Plus, ArrowRight, ArrowLeft, Save, Trash2 } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import './index.css';

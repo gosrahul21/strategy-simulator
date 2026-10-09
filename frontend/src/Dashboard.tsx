@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { Activity, DollarSign, Target, Clock, ArrowUpRight, ArrowDownRight, Layers } from 'lucide-react';
 import './Dashboard.css';
