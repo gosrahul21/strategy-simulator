@@ -1,0 +1,77 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Portfolio {
+  id               String     @id @default(uuid())
+  allocatedCapital Float
+  availableCash    Float
+  realizedPnl      Float      @default(0)
+  unrealizedPnl    Float      @default(0)
+  totalPnl         Float      @default(0)
+  strategies       Strategy[]
+}
+
+model Strategy {
+  id              String   @id @default(uuid())
+  name            String
+  instrument      String   @default("BTCUSDT")
+  duration        String
+  startDate       DateTime @default(now())
+  endDate         DateTime?
+  status          String   @default("Draft") // Draft, Running, Paused, Completed, Stopped
+  portfolioId     String
+  portfolio       Portfolio @relation(fields: [portfolioId], references: [id])
+  rules           Rule[]
+  positions       Position[]
+  orders          Order[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Rule {
+  id             String   @id @default(uuid())
+  strategyId     String
+  strategy       Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  timeframe      String   // 5m, 15m, 1h, etc.
+  indicator      String   // BollingerBands, RSI, etc.
+  condition      String   // lower_band_hit, support_break
+  action         String   // BUY or SELL
+  orderSize      Float
+  orderSizeUnit  String   // percentage or fixed
+  description    String?
+  enabled        Boolean  @default(true)
+  orders         Order[]
+}
+
+model Position {
+  id           String   @id @default(uuid())
+  strategyId   String
+  strategy     Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  instrument   String
+  quantity     Float
+  averagePrice Float
+  unrealizedPnl Float @default(0)
+  updatedAt    DateTime @updatedAt
+}
+
+model Order {
+  id               String   @id @default(uuid())
+  strategyId       String
+  strategy         Strategy @relation(fields: [strategyId], references: [id], onDelete: Cascade)
+  ruleId           String?
+  rule             Rule?    @relation(fields: [ruleId], references: [id])
+  action           String   // BUY or SELL
+  requestedSize    Float
+  executedQuantity Float
+  executedAmount   Float
+  executionPrice   Float?
+  status           String   // FILLED, REJECTED
+  rejectionReason  String?
+  timestamp        DateTime @default(now())
+}
